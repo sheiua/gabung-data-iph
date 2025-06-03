@@ -8,8 +8,8 @@ import io
 st.title("📊 Aplikasi Gabung Data Excel Harga IPH")
 
 # Input tahun dan bulan
-tahun = st.text_input("Masukkan Tahun", value="2025")
-bulan = st.text_input("Masukkan Bulan (misalnya: 01, 02, dst)", value="01")
+tahun = st.selectbox("Pilih Tahun", options=[2020, 2021, 2022, 2023, 2024, 2025], index=5)
+bulan = st.selectbox("Pilih Bulan", options=[f"{i:02d}" for i in range(1, 13)], index=0)
 
 # Upload file
 uploaded_files = st.file_uploader("Upload beberapa file Excel (.xlsx)", type=["xlsx"], accept_multiple_files=True)
@@ -67,7 +67,7 @@ if st.button("Proses dan Unduh .xls") and uploaded_files:
         for idx, (minggu, data_row) in enumerate(semua_data, start=1):
             baris = [
                 idx,
-                tahun,
+                str(tahun),
                 bulan,
                 minggu,
                 data_row[0],
