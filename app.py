@@ -20,7 +20,13 @@ if st.button("Proses dan Unduh .xls") and uploaded_files:
     semua_data = []
 
     # Kolom yang diambil
-    indeks_kolom = [0, 2, 3, 4, 5, 8, 9, 10]
+    indeks_kolom = []
+
+    # Indeks kolom yang ingin diambil dari file Excel (0-based)
+    if tahun == '2025':
+        indeks_kolom = [0, 2, 3, 4, 5, 8, 9, 10]
+    elif tahun == '2024':
+        indeks_kolom = [0, 1, 2, 3, 4, 7, 8, 9]
 
     # Fungsi ambil minggu dari nama file
     def extract_minggu_from_filename(filename):
