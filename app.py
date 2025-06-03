@@ -8,7 +8,7 @@ import io
 st.title("📊 Aplikasi Gabung Data Excel Harga IPH")
 
 # Input tahun dan bulan
-tahun = st.selectbox("Pilih Tahun", options=[2020, 2021, 2022, 2023, 2024, 2025], index=5)
+tahun = st.selectbox("Pilih Tahun", options=[2024, 2025], index=5)
 bulan = st.selectbox("Pilih Bulan", options=[f"{i:02d}" for i in range(1, 13)], index=0)
 
 # Upload file
