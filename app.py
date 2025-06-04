@@ -7,28 +7,31 @@ import io
 
 st.title("📊 Aplikasi Gabung Data Excel Harga IPH")
 
-# Input tahun dan bulan
-tahun = st.selectbox("Pilih Tahun", options=[2024, 2025], index=5)
+# Dropdown Tahun dan Bulan
+tahun = st.selectbox("Pilih Tahun", options=[2024, 2025], index=1)
 bulan = st.selectbox("Pilih Bulan", options=[f"{i:02d}" for i in range(1, 13)], index=0)
+indeks_kolom = []
 
-# Upload file
+
+
+# Upload file Excel
 uploaded_files = st.file_uploader("Upload beberapa file Excel (.xlsx)", type=["xlsx"], accept_multiple_files=True)
 
 # Tombol proses
 if st.button("Proses dan Unduh .xls") and uploaded_files:
+    st.title(tahun)
+    st.title(bulan)
+    st.title(indeks_kolom)
 
     semua_data = []
-
-    # Kolom yang diambil
-    indeks_kolom = []
-
     # Indeks kolom yang ingin diambil dari file Excel (0-based)
-    if tahun == '2025':
+    if tahun == 2025:
         indeks_kolom = [0, 2, 3, 4, 5, 8, 9, 10]
-    elif tahun == '2024':
+    elif tahun == 2024:
         indeks_kolom = [0, 1, 2, 3, 4, 7, 8, 9]
 
-    # Fungsi ambil minggu dari nama file
+    print(indeks_kolom)
+
     def extract_minggu_from_filename(filename):
         for i in range(1, 6):
             if f"M{i}" in filename.upper():
@@ -64,7 +67,6 @@ if st.button("Proses dan Unduh .xls") and uploaded_files:
             "disparitas_harga_antar_wilayah", "date_created"
         ]
 
-        # Tulis header
         for col_idx, val in enumerate(headers):
             sheet.write(0, col_idx, val)
 
@@ -89,7 +91,6 @@ if st.button("Proses dan Unduh .xls") and uploaded_files:
             for col_idx, val in enumerate(baris):
                 sheet.write(idx, col_idx, val)
 
-        # Simpan ke buffer .xls
         output = io.BytesIO()
         book.save(output)
         output.seek(0)
