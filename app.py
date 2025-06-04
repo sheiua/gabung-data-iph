@@ -19,9 +19,6 @@ uploaded_files = st.file_uploader("Upload beberapa file Excel (.xlsx)", type=["x
 
 # Tombol proses
 if st.button("Proses dan Unduh .xls") and uploaded_files:
-    st.title(tahun)
-    st.title(bulan)
-    st.title(indeks_kolom)
 
     semua_data = []
     # Indeks kolom yang ingin diambil dari file Excel (0-based)
