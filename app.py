@@ -18,6 +18,7 @@ bulan_nama = st.selectbox(
     index=0
 )
 
+# Peta nama ke nomor bulan
 map_bulan = {
     "Januari": "01",
     "Februari": "02",
@@ -45,6 +46,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
     semua_data_kab = []
     semua_data_prov = []
 
+    # Atur kolom untuk tiap tahun
     if tahun == 2025:
         indeks_kolom_kab = [0, 2, 3, 4, 5, 8, 9, 10]
         indeks_kolom_prov = [0, 1, 2, 3, 4, 5]
@@ -58,12 +60,14 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 return i
         return None
 
+    # Loop semua file
     for uploaded_file in uploaded_files:
         try:
             wb = load_workbook(uploaded_file, data_only=True)
             nama_file = uploaded_file.name
             minggu = extract_minggu(nama_file)
 
+            # Pindahkan sheet jika perlu
             if "360 KabKota" in wb.sheetnames:
                 sheet_kab = wb["360 KabKota"]
                 wb.remove(sheet_kab)
@@ -74,12 +78,14 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 wb.remove(sheet_prov)
                 wb._sheets.insert(1, sheet_prov)
 
+            # Ambil data KabKota Lampung saja
             ws_kab = wb.worksheets[0]
             for row in ws_kab.iter_rows(min_row=2, values_only=True):
                 if row[0] and str(row[0]).startswith("18"):
                     selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
                     semua_data_kab.append((minggu, selected))
 
+            # Ambil data Provinsi seluruh Indonesia
             if len(wb.worksheets) > 1:
                 ws_prov = wb.worksheets[1]
                 for row in ws_prov.iter_rows(min_row=2, values_only=True):
@@ -87,19 +93,19 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                         selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                         semua_data_prov.append((minggu, selected))
             else:
-                st.warning(f"❗ File {nama_file} hanya memiliki 1 sheet. Sheet Provinsi dilewati.")
+                st.warning(f"❗ File {nama_file} hanya punya 1 sheet, sheet Provinsi dilewati.")
 
         except Exception as e:
             st.error(f"❌ Gagal memproses file {uploaded_file.name}: {e}")
 
-    # PERBAIKAN → Ini HARUS di LUAR loop!
+    # Proses ZIP hanya jika ada data
     if semua_data_kab or semua_data_prov:
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
 
             today = datetime.today().strftime("%Y-%m-%d")
 
-            # Kabupaten only
+            # Kabupaten saja
             if semua_data_kab:
                 book_kab = xlwt.Workbook()
                 sheet_kab = book_kab.add_sheet("Gabungan_Kabupaten")
@@ -126,7 +132,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 output_kab.seek(0)
                 zip_file.writestr(f"gabungan_{bulan}_{tahun}_kabupaten.xls", output_kab.read())
 
-            # Provinsi only
+            # Provinsi saja
             if semua_data_prov:
                 book_prov = xlwt.Workbook()
                 sheet_prov = book_prov.add_sheet("Gabungan_Provinsi")
@@ -153,8 +159,8 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 output_prov.seek(0)
                 zip_file.writestr(f"gabungan_{bulan}_{tahun}_provinsi.xls", output_prov.read())
 
-            # Gabungan 2 sheet
-            if semua_data_kab or semua_data_prov:
+            # Gabungan 2 sheet hanya jika ADA KAB & PROV
+            if semua_data_kab and semua_data_prov:
                 book_combo = xlwt.Workbook()
                 sheet_combo_kab = book_combo.add_sheet("Kabupaten")
                 sheet_combo_prov = book_combo.add_sheet("Provinsi")
