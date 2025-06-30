@@ -18,7 +18,6 @@ bulan_nama = st.selectbox(
     index=0
 )
 
-# Peta nama ke nomor bulan
 map_bulan = {
     "Januari": "01",
     "Februari": "02",
@@ -35,7 +34,6 @@ map_bulan = {
 }
 bulan = map_bulan[bulan_nama]
 
-# Upload file Excel
 uploaded_files = st.file_uploader(
     "Upload beberapa file Excel (.xlsx)",
     type=["xlsx"],
@@ -66,7 +64,6 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             nama_file = uploaded_file.name
             minggu = extract_minggu(nama_file)
 
-            # 🔑 1. Atur urutan sheet
             if "360 KabKota" in wb.sheetnames:
                 sheet_kab = wb["360 KabKota"]
                 wb.remove(sheet_kab)
@@ -77,14 +74,12 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 wb.remove(sheet_prov)
                 wb._sheets.insert(1, sheet_prov)
 
-            # 2. Baca sheet KabKota (harus di index 0)
             ws_kab = wb.worksheets[0]
             for row in ws_kab.iter_rows(min_row=2, values_only=True):
                 if row[0] and str(row[0]).startswith("18"):
                     selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
                     semua_data_kab.append((minggu, selected))
 
-            # 3. Baca sheet Provinsi (harus di index 1)
             if len(wb.worksheets) > 1:
                 ws_prov = wb.worksheets[1]
                 for row in ws_prov.iter_rows(min_row=2, values_only=True):
@@ -97,7 +92,8 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
         except Exception as e:
             st.error(f"❌ Gagal memproses file {uploaded_file.name}: {e}")
 
-        if semua_data_kab or semua_data_prov:
+    # PERBAIKAN → Ini HARUS di LUAR loop!
+    if semua_data_kab or semua_data_prov:
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
 
@@ -157,13 +153,12 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 output_prov.seek(0)
                 zip_file.writestr(f"gabungan_{bulan}_{tahun}_provinsi.xls", output_prov.read())
 
-            # File gabungan (2 sheet)
+            # Gabungan 2 sheet
             if semua_data_kab or semua_data_prov:
                 book_combo = xlwt.Workbook()
                 sheet_combo_kab = book_combo.add_sheet("Kabupaten")
                 sheet_combo_prov = book_combo.add_sheet("Provinsi")
 
-                # Isi sheet Kabupaten
                 for col, val in enumerate(headers_kab):
                     sheet_combo_kab.write(0, col, val)
                 for idx, (minggu, row) in enumerate(semua_data_kab, start=1):
@@ -176,7 +171,6 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                     for col, val in enumerate(baris):
                         sheet_combo_kab.write(idx, col, val)
 
-                # Isi sheet Provinsi
                 for col, val in enumerate(headers_prov):
                     sheet_combo_prov.write(0, col, val)
                 for idx, (minggu, row) in enumerate(semua_data_prov, start=1):
