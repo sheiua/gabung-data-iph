@@ -18,20 +18,10 @@ bulan_nama = st.selectbox(
     index=0
 )
 
-# Map nama ke nomor bulan
 map_bulan = {
-    "Januari": "01",
-    "Februari": "02",
-    "Maret": "03",
-    "April": "04",
-    "Mei": "05",
-    "Juni": "06",
-    "Juli": "07",
-    "Agustus": "08",
-    "September": "09",
-    "Oktober": "10",
-    "November": "11",
-    "Desember": "12",
+    "Januari": "01", "Februari": "02", "Maret": "03", "April": "04",
+    "Mei": "05", "Juni": "06", "Juli": "07", "Agustus": "08",
+    "September": "09", "Oktober": "10", "November": "11", "Desember": "12",
 }
 bulan = map_bulan[bulan_nama]
 
@@ -70,50 +60,49 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 minggu = extract_minggu(nama_file)
 
                 # Pastikan urutan sheet
-                if "360 KabKota" in wb.sheetnames:
-                    sheet_kab = wb["360 KabKota"]
+                sheet_kab = wb["360 KabKota"] if "360 KabKota" in wb.sheetnames else None
+                sheet_prov = wb["Provinsi"] if "Provinsi" in wb.sheetnames else None
+
+                if sheet_kab:
                     wb.remove(sheet_kab)
                     wb._sheets.insert(0, sheet_kab)
                 else:
                     st.warning(f"File {nama_file} tidak punya sheet 360 KabKota")
 
-                if "Provinsi" in wb.sheetnames:
-                    sheet_prov = wb["Provinsi"]
+                if sheet_prov:
                     wb.remove(sheet_prov)
                     wb._sheets.insert(1, sheet_prov)
                 else:
                     st.warning(f"File {nama_file} tidak punya sheet Provinsi")
 
                 # Ambil data Kab
-                ws_kab = wb.worksheets[0]
-                for row in ws_kab.iter_rows(min_row=2, values_only=True):
-                    if row[0] and str(row[0]).startswith("18"):
-                        selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
-                        semua_data_kab.append((minggu, selected))
+                if sheet_kab:
+                    for row in sheet_kab.iter_rows(min_row=2, values_only=True):
+                        if row[0] and str(row[0]).startswith("18"):
+                            selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
+                            semua_data_kab.append((minggu, selected))
 
                 # Ambil data Prov
-                if len(wb.worksheets) > 1:
-                    ws_prov = wb.worksheets[1]
-                    for row in ws_prov.iter_rows(min_row=2, values_only=True):
+                if sheet_prov:
+                    for row in sheet_prov.iter_rows(min_row=2, values_only=True):
                         if row[0]:
                             selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                             semua_data_prov.append((minggu, selected))
-                else:
-                    st.warning(f"File {nama_file} hanya punya 1 sheet Provinsi dilewati.")
 
-                # Buat salinan bersih
+                # Buat salinan cleaned hanya kalau minimal Kab/Prov ada
                 wb_clean = Workbook()
                 ws_clean_kab = wb_clean.active
                 ws_clean_kab.title = "360 KabKota"
-                ws_clean_prov = wb_clean.create_sheet("Provinsi")
+                if sheet_kab:
+                    for row in sheet_kab.iter_rows(values_only=True):
+                        if any(row):
+                            ws_clean_kab.append(row)
 
-                for row in ws_kab.iter_rows(values_only=True):
-                    if any(row):
-                        ws_clean_kab.append(row)
-
-                for row in ws_prov.iter_rows(values_only=True):
-                    if any(row):
-                        ws_clean_prov.append(row)
+                if sheet_prov:
+                    ws_clean_prov = wb_clean.create_sheet("Provinsi")
+                    for row in sheet_prov.iter_rows(values_only=True):
+                        if any(row):
+                            ws_clean_prov.append(row)
 
                 clean_buffer = io.BytesIO()
                 wb_clean.save(clean_buffer)
