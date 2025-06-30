@@ -66,7 +66,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             nama_file = uploaded_file.name
             minggu = extract_minggu(nama_file)
 
-            # 🔑 Atur urutan sheet
+            # 🔑 1. Atur urutan sheet
             if "360 KabKota" in wb.sheetnames:
                 sheet_kab = wb["360 KabKota"]
                 wb.remove(sheet_kab)
@@ -77,47 +77,44 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 wb.remove(sheet_prov)
                 wb._sheets.insert(1, sheet_prov)
 
-            # 1️⃣ KabKota → HANYA Lampung (kode prop 18)
+            # 2. Baca sheet KabKota (harus di index 0)
             ws_kab = wb.worksheets[0]
             for row in ws_kab.iter_rows(min_row=2, values_only=True):
                 if row[0] and str(row[0]).startswith("18"):
                     selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
                     semua_data_kab.append((minggu, selected))
 
-            # 2️⃣ Provinsi → Semua baris tanpa filter
+            # 3. Baca sheet Provinsi (harus di index 1)
             if len(wb.worksheets) > 1:
                 ws_prov = wb.worksheets[1]
                 for row in ws_prov.iter_rows(min_row=2, values_only=True):
-                    if row[0]:  # abaikan baris kosong
+                    if row[0]:
                         selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                         semua_data_prov.append((minggu, selected))
             else:
-                st.warning(f"❗ File {nama_file} hanya punya 1 sheet. Sheet Provinsi dilewati.")
+                st.warning(f"❗ File {nama_file} hanya memiliki 1 sheet. Sheet Provinsi dilewati.")
 
         except Exception as e:
             st.error(f"❌ Gagal memproses file {uploaded_file.name}: {e}")
 
-    if semua_data_kab or semua_data_prov:
+        if semua_data_kab or semua_data_prov:
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
 
             today = datetime.today().strftime("%Y-%m-%d")
 
-            # Kabupaten
+            # Kabupaten only
             if semua_data_kab:
                 book_kab = xlwt.Workbook()
                 sheet_kab = book_kab.add_sheet("Gabungan_Kabupaten")
-
                 headers_kab = [
                     "id", "tahun", "bulan", "minggu", "kode_kab",
                     "prov", "kab", "nilai_iph", "komoditas",
                     "fluktuasi_harga_tertinggi", "nilai_fluktuasi_tertinggi",
                     "disparitas_harga_antar_wilayah", "date_created"
                 ]
-
                 for col, val in enumerate(headers_kab):
                     sheet_kab.write(0, col, val)
-
                 for idx, (minggu, row) in enumerate(semua_data_kab, start=1):
                     komoditas = str(row[4]).replace(",", ";")
                     baris = [
@@ -133,21 +130,18 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 output_kab.seek(0)
                 zip_file.writestr(f"gabungan_{bulan}_{tahun}_kabupaten.xls", output_kab.read())
 
-            # Provinsi
+            # Provinsi only
             if semua_data_prov:
                 book_prov = xlwt.Workbook()
                 sheet_prov = book_prov.add_sheet("Gabungan_Provinsi")
-
                 headers_prov = [
                     "id", "tahun", "bulan", "minggu", "kode_prov",
                     "prov", "nilai_iph", "komoditas",
                     "fluktuasi_harga_tertinggi", "nilai_fluktuasi_tertinggi",
                     "disparitas_harga_antar_wilayah", "date_created"
                 ]
-
                 for col, val in enumerate(headers_prov):
                     sheet_prov.write(0, col, val)
-
                 for idx, (minggu, row) in enumerate(semua_data_prov, start=1):
                     komoditas = str(row[3]).replace(",", ";")
                     baris = [
@@ -162,6 +156,43 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 book_prov.save(output_prov)
                 output_prov.seek(0)
                 zip_file.writestr(f"gabungan_{bulan}_{tahun}_provinsi.xls", output_prov.read())
+
+            # File gabungan (2 sheet)
+            if semua_data_kab or semua_data_prov:
+                book_combo = xlwt.Workbook()
+                sheet_combo_kab = book_combo.add_sheet("Kabupaten")
+                sheet_combo_prov = book_combo.add_sheet("Provinsi")
+
+                # Isi sheet Kabupaten
+                for col, val in enumerate(headers_kab):
+                    sheet_combo_kab.write(0, col, val)
+                for idx, (minggu, row) in enumerate(semua_data_kab, start=1):
+                    komoditas = str(row[4]).replace(",", ";")
+                    baris = [
+                        idx, str(tahun), bulan, minggu,
+                        row[0], row[1], row[2], row[3],
+                        komoditas, row[5], row[6], row[7], today
+                    ]
+                    for col, val in enumerate(baris):
+                        sheet_combo_kab.write(idx, col, val)
+
+                # Isi sheet Provinsi
+                for col, val in enumerate(headers_prov):
+                    sheet_combo_prov.write(0, col, val)
+                for idx, (minggu, row) in enumerate(semua_data_prov, start=1):
+                    komoditas = str(row[3]).replace(",", ";")
+                    baris = [
+                        idx, str(tahun), bulan, minggu,
+                        row[0], row[1], row[2],
+                        komoditas, row[4], row[5], "", today
+                    ]
+                    for col, val in enumerate(baris):
+                        sheet_combo_prov.write(idx, col, val)
+
+                output_combo = io.BytesIO()
+                book_combo.save(output_combo)
+                output_combo.seek(0)
+                zip_file.writestr(f"gabungan_{bulan}_{tahun}_2sheet.xls", output_combo.read())
 
         zip_buffer.seek(0)
         st.success("✅ Data berhasil diproses!")
