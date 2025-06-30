@@ -89,7 +89,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                             selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                             semua_data_prov.append((minggu, selected))
 
-                # Buat salinan cleaned hanya kalau minimal Kab/Prov ada
+                # Buat salinan cleaned untuk setiap file, simpan di zip dengan nama unik
                 wb_clean = Workbook()
                 ws_clean_kab = wb_clean.active
                 ws_clean_kab.title = "360 KabKota"
@@ -107,7 +107,10 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 clean_buffer = io.BytesIO()
                 wb_clean.save(clean_buffer)
                 clean_buffer.seek(0)
-                zip_file.writestr(f"original_cleaned_{bulan}_{tahun}.xlsx", clean_buffer.read())
+
+                # Nama file cleaned unik per file upload
+                cleaned_filename = f"original_cleaned_{nama_file.replace('.xlsx','')}_{bulan}_{tahun}.xlsx"
+                zip_file.writestr(cleaned_filename, clean_buffer.read())
 
             except Exception as e:
                 st.error(f"❌ Gagal proses file {uploaded_file.name}: {e}")
@@ -176,3 +179,4 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
         file_name=f"gabungan_IPH_{bulan}_{tahun}.zip",
         mime="application/zip"
     )
+
