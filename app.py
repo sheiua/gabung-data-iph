@@ -66,7 +66,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             nama_file = uploaded_file.name
             minggu = extract_minggu(nama_file)
 
-            # 🔑 1. Atur urutan sheet
+            # 🔑 Atur urutan sheet
             if "360 KabKota" in wb.sheetnames:
                 sheet_kab = wb["360 KabKota"]
                 wb.remove(sheet_kab)
@@ -77,22 +77,22 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 wb.remove(sheet_prov)
                 wb._sheets.insert(1, sheet_prov)
 
-            # 2. Baca sheet KabKota (harus di index 0)
+            # 1️⃣ KabKota → HANYA Lampung (kode prop 18)
             ws_kab = wb.worksheets[0]
             for row in ws_kab.iter_rows(min_row=2, values_only=True):
                 if row[0] and str(row[0]).startswith("18"):
                     selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
                     semua_data_kab.append((minggu, selected))
 
-            # 3. Baca sheet Provinsi (harus di index 1)
+            # 2️⃣ Provinsi → Semua baris tanpa filter
             if len(wb.worksheets) > 1:
                 ws_prov = wb.worksheets[1]
                 for row in ws_prov.iter_rows(min_row=2, values_only=True):
-                    if row[0]:
+                    if row[0]:  # abaikan baris kosong
                         selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                         semua_data_prov.append((minggu, selected))
             else:
-                st.warning(f"❗ File {nama_file} hanya memiliki 1 sheet. Sheet Provinsi dilewati.")
+                st.warning(f"❗ File {nama_file} hanya punya 1 sheet. Sheet Provinsi dilewati.")
 
         except Exception as e:
             st.error(f"❌ Gagal memproses file {uploaded_file.name}: {e}")
