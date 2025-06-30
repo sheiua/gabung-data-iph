@@ -1,2 +1,4 @@
-xlwt
+streamlit
+pandas
 openpyxl
+xlwt
