@@ -116,7 +116,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             headers_kab = [
                 "kode_kab", "prov", "kab", "nilai_iph", "komoditas",
                 "fluktuasi_harga_tertinggi", "nilai_fluktuasi_tertinggi",
-                "disparitas_harga_antar_wilayah", "date_created"
+                "disparitas_harga_antar_wilayah"
             ]
             for col, val in enumerate(headers_kab):
                 sheet_kab.write(0, col, val)
@@ -134,14 +134,13 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             output_kab.seek(0)
             zip_file.writestr(f"gabungan_{bulan}_{tahun}_kabupaten.xls", output_kab.read())
 
-        # Gabung Prov
+        # Gabung Prov - versi tanpa kolom kosong
         if semua_data_prov:
             book_prov = xlwt.Workbook()
             sheet_prov = book_prov.add_sheet("Gabungan_Provinsi")
             headers_prov = [
                 "kode_prov", "nama_prov", "Perubahan IPH", "Komoditas Andil Terbesar",
-                "Fluktuasi Harga Tertinggi Minggu Berjalan", "Nilai CV/Nilai fluktuasi",
-                "Disparitas Harga Antar Wilayah"
+                "Fluktuasi Harga Tertinggi Minggu Berjalan", "Nilai CV (Nilai Fluktuasi)"
             ]
             for col, val in enumerate(headers_prov):
                 sheet_prov.write(0, col, val)
@@ -149,7 +148,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 komoditas = str(row[3]).replace(",", ";")
                 baris = [
                     row[0], row[1], row[2], komoditas,
-                    row[4], row[5], "", today
+                    row[4], row[5], today
                 ]
                 for col, val in enumerate(baris):
                     sheet_prov.write(idx, col, val)
