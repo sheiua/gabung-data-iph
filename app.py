@@ -1,12 +1,12 @@
 import streamlit as st
-from openpyxl import load_workbook, Workbook
+from openpyxl import load_workbook
 import xlwt
 import io
 import zipfile
 
-st.title("📊 Aplikasi Gabung Data IPH (Tanpa Kolom Tambahan)")
+st.title("📊 Aplikasi Gabung Data IPH - Bersih tanpa Pivot")
 
-# Pilih tahun & bulan
+# Pilih tahun dan bulan
 tahun = st.selectbox("Pilih Tahun", [2023, 2024, 2025], index=2)
 bulan = st.selectbox(
     "Pilih Bulan",
@@ -27,59 +27,71 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
     semua_kab, semua_prov = [], []
     header_kab, header_prov = [], []
 
+    kolom_dihapus = [
+        "Upaya Pemda (Monev)",
+        "Saran Kepada Pemda",
+        "Disparitas Harga Antar Daerah"
+    ]
+
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zf:
         for f in uploaded_files:
             wb = load_workbook(f, data_only=True)
             sheets = wb.sheetnames
 
+            # Hanya proses sheet yang valid
             sheet_kab = wb["360 KabKota"] if "360 KabKota" in sheets else None
             sheet_prov = wb["Provinsi"] if "Provinsi" in sheets else None
 
-            # ==== Sheet KabKota ====
+            # Proses Kabupaten
             if sheet_kab:
                 if not header_kab:
                     header_kab = [cell.value for cell in next(sheet_kab.iter_rows(min_row=1, max_row=1))]
-                for r in sheet_kab.iter_rows(min_row=2, values_only=True):
-                    if r[0] and str(r[0]).startswith("18"):
-                        semua_kab.append(list(r))
+                for row in sheet_kab.iter_rows(min_row=2, values_only=True):
+                    if row[0] and str(row[0]).startswith("18"):
+                        semua_kab.append(list(row))
 
-            # ==== Sheet Provinsi ====
+            # Proses Provinsi
             if sheet_prov:
                 if not header_prov:
                     header_prov = [cell.value for cell in next(sheet_prov.iter_rows(min_row=1, max_row=1))]
-                for r in sheet_prov.iter_rows(min_row=2, values_only=True):
-                    if r[0]:
-                        semua_prov.append(list(r))
+                for row in sheet_prov.iter_rows(min_row=2, values_only=True):
+                    if row[0]:
+                        semua_prov.append(list(row))
 
-        # ==== Simpan KABUPATEN ====
+        # Output Kabupaten
         if semua_kab:
+            idx_kab_simpan = [i for i, h in enumerate(header_kab) if h not in kolom_dihapus]
+            header_kab_final = [header_kab[i] for i in idx_kab_simpan]
+            data_kab_final = [[row[i] for i in idx_kab_simpan] for row in semua_kab]
+
             bk = xlwt.Workbook()
             sk = bk.add_sheet("Gabungan_Kabupaten")
-            for i, col in enumerate(header_kab):
+            for i, col in enumerate(header_kab_final):
                 sk.write(0, i, col)
-            for i, row in enumerate(semua_kab, 1):
+            for i, row in enumerate(data_kab_final, 1):
                 for j, val in enumerate(row):
                     sk.write(i, j, val)
+
             buf = io.BytesIO()
             bk.save(buf)
             buf.seek(0)
             zf.writestr(f"kabupaten_{bulan_num}_{tahun}.xls", buf.read())
 
-        # ==== Simpan PROVINSI ====
+        # Output Provinsi
         if semua_prov:
-            kol_dihapus = ["Upaya Pemda (Monev)", "Saran Kepada Pemda", "Disparitas Harga Antar Daerah"]
-            idx_simpan = [i for i, h in enumerate(header_prov) if h not in kol_dihapus]
-            header_final = [header_prov[i] for i in idx_simpan]
-            data_final = [[row[i] for i in idx_simpan] for row in semua_prov]
+            idx_prov_simpan = [i for i, h in enumerate(header_prov) if h not in kolom_dihapus]
+            header_prov_final = [header_prov[i] for i in idx_prov_simpan]
+            data_prov_final = [[row[i] for i in idx_prov_simpan] for row in semua_prov]
 
             bp = xlwt.Workbook()
             sp = bp.add_sheet("Provinsi")
-            for i, col in enumerate(header_final):
+            for i, col in enumerate(header_prov_final):
                 sp.write(0, i, col)
-            for i, row in enumerate(data_final, 1):
+            for i, row in enumerate(data_prov_final, 1):
                 for j, val in enumerate(row):
                     sp.write(i, j, val)
+
             buf = io.BytesIO()
             bp.save(buf)
             buf.seek(0)
