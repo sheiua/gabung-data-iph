@@ -57,9 +57,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             try:
                 wb = load_workbook(uploaded_file, data_only=True)
                 nama_file = uploaded_file.name
-                minggu = extract_minggu(nama_file)
 
-                # Pastikan urutan sheet
                 sheet_kab = wb["360 KabKota"] if "360 KabKota" in wb.sheetnames else None
                 sheet_prov = wb["Provinsi"] if "Provinsi" in wb.sheetnames else None
 
@@ -75,21 +73,18 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 else:
                     st.warning(f"File {nama_file} tidak punya sheet Provinsi")
 
-                # Ambil data Kab
                 if sheet_kab:
                     for row in sheet_kab.iter_rows(min_row=2, values_only=True):
                         if row[0] and str(row[0]).startswith("18"):
                             selected = [row[i] if i < len(row) else None for i in indeks_kolom_kab]
-                            semua_data_kab.append((minggu, selected))
+                            semua_data_kab.append(selected)
 
-                # Ambil data Prov
                 if sheet_prov:
                     for row in sheet_prov.iter_rows(min_row=2, values_only=True):
                         if row[0]:
                             selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
-                            semua_data_prov.append((minggu, selected))
+                            semua_data_prov.append(selected)
 
-                # Buat salinan cleaned untuk setiap file, simpan di zip dengan nama unik
                 wb_clean = Workbook()
                 ws_clean_kab = wb_clean.active
                 ws_clean_kab.title = "360 KabKota"
@@ -107,10 +102,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 clean_buffer = io.BytesIO()
                 wb_clean.save(clean_buffer)
                 clean_buffer.seek(0)
-
-                # Nama file cleaned unik per file upload
-                cleaned_filename = f"original_cleaned_{nama_file.replace('.xlsx','')}_{bulan}_{tahun}.xlsx"
-                zip_file.writestr(cleaned_filename, clean_buffer.read())
+                zip_file.writestr(f"original_cleaned_{bulan}_{tahun}.xlsx", clean_buffer.read())
 
             except Exception as e:
                 st.error(f"❌ Gagal proses file {uploaded_file.name}: {e}")
@@ -122,17 +114,15 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             book_kab = xlwt.Workbook()
             sheet_kab = book_kab.add_sheet("Gabungan_Kabupaten")
             headers_kab = [
-                "id", "tahun", "bulan", "minggu", "kode_kab",
-                "prov", "kab", "nilai_iph", "komoditas",
+                "kode_kab", "prov", "kab", "nilai_iph", "komoditas",
                 "fluktuasi_harga_tertinggi", "nilai_fluktuasi_tertinggi",
                 "disparitas_harga_antar_wilayah", "date_created"
             ]
             for col, val in enumerate(headers_kab):
                 sheet_kab.write(0, col, val)
-            for idx, (minggu, row) in enumerate(semua_data_kab, start=1):
+            for idx, row in enumerate(semua_data_kab, start=1):
                 komoditas = str(row[4]).replace(",", ";")
                 baris = [
-                    idx, str(tahun), bulan, minggu,
                     row[0], row[1], row[2], row[3],
                     komoditas, row[5], row[6], row[7], today
                 ]
@@ -149,19 +139,17 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             book_prov = xlwt.Workbook()
             sheet_prov = book_prov.add_sheet("Gabungan_Provinsi")
             headers_prov = [
-                "id", "tahun", "bulan", "minggu", "kode_prov",
-                "prov", "nilai_iph", "komoditas",
+                "kode_prov", "prov", "nilai_iph", "komoditas",
                 "fluktuasi_harga_tertinggi", "nilai_fluktuasi_tertinggi",
                 "disparitas_harga_antar_wilayah", "date_created"
             ]
             for col, val in enumerate(headers_prov):
                 sheet_prov.write(0, col, val)
-            for idx, (minggu, row) in enumerate(semua_data_prov, start=1):
+            for idx, row in enumerate(semua_data_prov, start=1):
                 komoditas = str(row[3]).replace(",", ";")
                 baris = [
-                    idx, str(tahun), bulan, minggu,
-                    row[0], row[1], row[2],
-                    komoditas, row[4], row[5], "", today
+                    row[0], row[1], row[2], komoditas,
+                    row[4], row[5], "", today
                 ]
                 for col, val in enumerate(baris):
                     sheet_prov.write(idx, col, val)
@@ -179,4 +167,3 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
         file_name=f"gabungan_IPH_{bulan}_{tahun}.zip",
         mime="application/zip"
     )
-
