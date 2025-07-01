@@ -45,7 +45,7 @@ def ekstrak_komoditas_tertinggi(row):
     return max_komoditas, round(abs(max_value), 6)
 
 # Fungsi bersihkan kolom kosong
-kolom_kosong_dihilangkan = ["Upaya Pemda (Monev)", "Saran Kepada Pemda", "Disparitas Harga Antar Daerah"]
+kolom_kosong_dihilangkan = ["Upaya Pemda (Monev)", "Saran Kepada Pemda", "Disparitas Harga antar Daerah"]
 
 def bersihkan_header_dan_data(header, data_rows):
     idx_hapus = [i for i, h in enumerate(header) if h in kolom_kosong_dihilangkan]
