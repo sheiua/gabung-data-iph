@@ -24,11 +24,21 @@ bulan_num = map_bulan[bulan]
 
 uploaded_files = st.file_uploader("Upload file Excel (.xlsx)", type="xlsx", accept_multiple_files=True)
 
-# Fungsi ambil komoditas fluktuasi tertinggi
-def ekstrak_komoditas_tertinggi(row):
-    if not row or len(row) < 7 or not row[6]:
+# Kolom kosong yang ingin dihapus
+kolom_kosong_dihilangkan = ["Upaya Pemda (Monev)", "Saran Kepada Pemda", "Disparitas Harga Antar Daerah"]
+
+# Fungsi ekstrak komoditas dengan fluktuasi tertinggi
+def ekstrak_komoditas_tertinggi(row, header):
+    try:
+        idx = header.index("Komoditas Andil Besar")
+        data = row[idx]
+    except (ValueError, IndexError):
         return "", ""
-    komoditas_data = str(row[6]).split(';')
+
+    if not data:
+        return "", ""
+
+    komoditas_data = str(data).split(';')
     max_komoditas = ""
     max_value = 0.0
     for item in komoditas_data:
@@ -44,10 +54,7 @@ def ekstrak_komoditas_tertinggi(row):
                 continue
     return max_komoditas, round(abs(max_value), 6)
 
-# Kolom yang akan dibuang (kosong)
-kolom_kosong_dihilangkan = ["Upaya Pemda (Monev)", "Saran Kepada Pemda", "Disparitas Harga antar Daerah"]
-
-# Fungsi bersihkan kolom kosong
+# Fungsi hapus kolom kosong
 def bersihkan_header_dan_data(header, data_rows):
     idx_hapus = [i for i, h in enumerate(header) if h in kolom_kosong_dihilangkan]
     header_baru = [h for i, h in enumerate(header) if i not in idx_hapus]
@@ -91,7 +98,7 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
                     if r[0]:
                         semua_prov.append(list(r))
 
-            # Simpan file original versi cleaned
+            # Simpan file versi bersih
             if sheet_kab or sheet_prov:
                 wb_clean = Workbook()
                 has_data = False
@@ -114,19 +121,19 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
                     buf.seek(0)
                     zf.writestr(f"{f.name}_CLEANED.xlsx", buf.read())
 
-        # Tulis file gabungan kabupaten
+        # Tulis gabungan KabKota
         if semua_kab:
             if "Fluktuasi Harga Tertinggi Minggu Berjalan" not in header_kab:
                 header_kab.append("Fluktuasi Harga Tertinggi Minggu Berjalan")
-            if "Nilai CV (Nilai fluktuasi)" not in header_kab:
-                header_kab.append("Nilai CV (Nilai fluktuasi)")
+            if "Nilai CV (Nilai Fluktuasi)" not in header_kab:
+                header_kab.append("Nilai CV (Nilai Fluktuasi)")
 
             for row in semua_kab:
-                komoditas, nilai = ekstrak_komoditas_tertinggi(row)
+                komoditas, nilai = ekstrak_komoditas_tertinggi(row, header_kab)
                 while len(row) < len(header_kab):
                     row.append("")
                 row[header_kab.index("Fluktuasi Harga Tertinggi Minggu Berjalan")] = komoditas
-                row[header_kab.index("Nilai CV (Nilai fluktuasi)")] = nilai
+                row[header_kab.index("Nilai CV (Nilai Fluktuasi)")] = nilai
 
             header_kab, semua_kab = bersihkan_header_dan_data(header_kab, semua_kab)
 
@@ -142,28 +149,27 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
             buf.seek(0)
             zf.writestr(f"kabupaten_{bulan_num}_{tahun}.xls", buf.read())
 
-        # Tulis file gabungan provinsi dengan format khusus
+        # Tulis gabungan Provinsi format sesuai gambar
         if semua_prov:
             if "Fluktuasi Harga Tertinggi Minggu Berjalan" not in header_prov:
                 header_prov.append("Fluktuasi Harga Tertinggi Minggu Berjalan")
-            if "Nilai CV (Nilai fluktuasi)" not in header_prov:
-                header_prov.append("Nilai CV (Nilai fluktuasi)")
+            if "Nilai CV (Nilai Fluktuasi)" not in header_prov:
+                header_prov.append("Nilai CV (Nilai Fluktuasi)")
 
             for row in semua_prov:
-                komoditas, nilai = ekstrak_komoditas_tertinggi(row)
+                komoditas, nilai = ekstrak_komoditas_tertinggi(row, header_prov)
                 while len(row) < len(header_prov):
                     row.append("")
                 row[header_prov.index("Fluktuasi Harga Tertinggi Minggu Berjalan")] = komoditas
-                row[header_prov.index("Nilai CV (Nilai fluktuasi)")] = nilai
+                row[header_prov.index("Nilai CV (Nilai Fluktuasi)")] = nilai
 
-            # Kolom yang ditampilkan di sheet provinsi
             kolom_diambil = [
                 "kode_prov",
                 "nama_prov",
                 "perubahan IPH",
-                "Komoditas Andil Terbesar",
+                "Komoditas Andil Besar",
                 "Fluktuasi Harga Tertinggi Minggu Berjalan",
-                "Nilai CV (Nilai fluktuasi)"
+                "Nilai CV (Nilai Fluktuasi)"
             ]
             idx_diambil = [i for i, h in enumerate(header_prov) if h in kolom_diambil]
             header_prov_bersih = [header_prov[i] for i in idx_diambil]
