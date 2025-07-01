@@ -31,7 +31,7 @@ if st.button("🔄 Proses & Unduh ZIP"):
     kolom_dihapus = [
         "Upaya Pemda (Monev)",
         "Saran Kepada Pemda",
-        "Disparitas Harga Antar Daerah"
+        "Disparitas Harga antar Daerah"
     ]
 
     zip_buffer = io.BytesIO()
