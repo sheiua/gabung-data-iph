@@ -6,6 +6,7 @@ import zipfile
 
 st.title("📊 Aplikasi Gabung Data IPH")
 
+# Pilih tahun & bulan
 tahun = st.selectbox("Pilih Tahun", [2023, 2024, 2025], index=2)
 bulan = st.selectbox(
     "Pilih Bulan",
@@ -24,12 +25,10 @@ uploaded_files = st.file_uploader("Upload file Excel (.xlsx)", type="xlsx", acce
 
 if st.button("Proses & Unduh ZIP") and uploaded_files:
     semua_kab, semua_prov = [], []
-    indeks_kolom_kab = list(range(10))
-    indeks_kolom_prov = list(range(6))
+    header_kab, header_prov = [], []
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zf:
-
         for f in uploaded_files:
             wb = load_workbook(f, data_only=True)
             sheets = wb.sheetnames
@@ -45,14 +44,21 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
                 wb._sheets.insert(1, sheet_prov)
 
             if sheet_kab:
+                # Ambil header hanya sekali
+                if not header_kab:
+                    header_kab = [cell.value for cell in next(sheet_kab.iter_rows(min_row=1, max_row=1))]
+                # Ambil data baris
                 for r in sheet_kab.iter_rows(min_row=2, values_only=True):
                     if r[0] and str(r[0]).startswith("18"):
-                        semua_kab.append([r[i] if i < len(r) else None for i in indeks_kolom_kab])
+                        semua_kab.append(list(r))
 
             if sheet_prov:
+                # Ambil header hanya sekali
+                if not header_prov:
+                    header_prov = [cell.value for cell in next(sheet_prov.iter_rows(min_row=1, max_row=1))]
                 for r in sheet_prov.iter_rows(min_row=2, values_only=True):
                     if r[0]:
-                        semua_prov.append([r[i] if i < len(r) else None for i in indeks_kolom_prov])
+                        semua_prov.append(list(r))
 
             # Save cleaned original
             if sheet_kab or sheet_prov:
@@ -81,12 +87,8 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
         if semua_kab:
             bk = xlwt.Workbook()
             sk = bk.add_sheet("Gabungan_Kabupaten")
-            for i, col in enumerate([
-                "kode_kab", "pulau", "nama_prov", "nama_kab",
-                "NON HK", "Perubahan IPH", "Komoditas Andil Besar",
-                "Fluktuasi Harga Tertinggi Minggu Berjalan",
-                "Nilai CV (Nilai Fluktuasi)", "status"
-            ]):
+            # Tulis header dinamis
+            for i, col in enumerate(header_kab):
                 sk.write(0, i, col)
             for i, row in enumerate(semua_kab, 1):
                 for j, val in enumerate(row):
@@ -100,12 +102,8 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
         if semua_prov:
             bp = xlwt.Workbook()
             sp = bp.add_sheet("Gabungan_Provinsi")
-            for i, col in enumerate([
-                "kode_prov", "nama_prov", "Perubahan IPH",
-                "Komoditas Andil Terbesar",
-                "Fluktuasi Harga Tertinggi Minggu Berjalan",
-                "Nilai CV (Nilai Fluktuasi)"
-            ]):
+            # Tulis header dinamis
+            for i, col in enumerate(header_prov):
                 sp.write(0, i, col)
             for i, row in enumerate(semua_prov, 1):
                 for j, val in enumerate(row):
