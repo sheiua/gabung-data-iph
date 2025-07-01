@@ -24,7 +24,7 @@ bulan_num = map_bulan[bulan]
 
 uploaded_files = st.file_uploader("Upload file Excel (.xlsx)", type="xlsx", accept_multiple_files=True)
 
-# Fungsi untuk ambil komoditas dengan nilai absolut tertinggi
+# Fungsi ambil komoditas fluktuasi tertinggi
 def ekstrak_komoditas_tertinggi(row):
     if not row or len(row) < 7 or not row[6]:
         return "", ""
@@ -44,9 +44,10 @@ def ekstrak_komoditas_tertinggi(row):
                 continue
     return max_komoditas, round(abs(max_value), 6)
 
-# Fungsi bersihkan kolom kosong
+# Kolom yang akan dibuang (kosong)
 kolom_kosong_dihilangkan = ["Upaya Pemda (Monev)", "Saran Kepada Pemda", "Disparitas Harga antar Daerah"]
 
+# Fungsi bersihkan kolom kosong
 def bersihkan_header_dan_data(header, data_rows):
     idx_hapus = [i for i, h in enumerate(header) if h in kolom_kosong_dihilangkan]
     header_baru = [h for i, h in enumerate(header) if i not in idx_hapus]
@@ -90,7 +91,7 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
                     if r[0]:
                         semua_prov.append(list(r))
 
-            # Simpan file versi cleaned
+            # Simpan file original versi cleaned
             if sheet_kab or sheet_prov:
                 wb_clean = Workbook()
                 has_data = False
@@ -113,12 +114,14 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
                     buf.seek(0)
                     zf.writestr(f"{f.name}_CLEANED.xlsx", buf.read())
 
-        # Gabungkan data kabupaten
+        # Tulis file gabungan kabupaten
         if semua_kab:
             if "Fluktuasi Harga Tertinggi Minggu Berjalan" not in header_kab:
-                header_kab += ["Fluktuasi Harga Tertinggi Minggu Berjalan", "Nilai CV (Nilai Fluktuasi)"]
+                header_kab.append("Fluktuasi Harga Tertinggi Minggu Berjalan")
+            if "Nilai CV (Nilai fluktuasi)" not in header_kab:
+                header_kab.append("Nilai CV (Nilai fluktuasi)")
 
-            for i, row in enumerate(semua_kab):
+            for row in semua_kab:
                 komoditas, nilai = ekstrak_komoditas_tertinggi(row)
                 while len(row) < len(header_kab):
                     row.append("")
@@ -139,25 +142,40 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
             buf.seek(0)
             zf.writestr(f"kabupaten_{bulan_num}_{tahun}.xls", buf.read())
 
-        # Gabungkan data provinsi
+        # Tulis file gabungan provinsi dengan format khusus
         if semua_prov:
             if "Fluktuasi Harga Tertinggi Minggu Berjalan" not in header_prov:
-                header_prov += ["Fluktuasi Harga Tertinggi Minggu Berjalan", "Nilai CV (Nilai Fluktuasi)"]
+                header_prov.append("Fluktuasi Harga Tertinggi Minggu Berjalan")
+            if "Nilai CV (Nilai fluktuasi)" not in header_prov:
+                header_prov.append("Nilai CV (Nilai fluktuasi)")
 
-            for i, row in enumerate(semua_prov):
+            for row in semua_prov:
                 komoditas, nilai = ekstrak_komoditas_tertinggi(row)
                 while len(row) < len(header_prov):
                     row.append("")
                 row[header_prov.index("Fluktuasi Harga Tertinggi Minggu Berjalan")] = komoditas
                 row[header_prov.index("Nilai CV (Nilai fluktuasi)")] = nilai
 
-            header_prov, semua_prov = bersihkan_header_dan_data(header_prov, semua_prov)
+            # Kolom yang ditampilkan di sheet provinsi
+            kolom_diambil = [
+                "kode_prov",
+                "nama_prov",
+                "perubahan IPH",
+                "Komoditas Andil Terbesar",
+                "Fluktuasi Harga Tertinggi Minggu Berjalan",
+                "Nilai CV (Nilai fluktuasi)"
+            ]
+            idx_diambil = [i for i, h in enumerate(header_prov) if h in kolom_diambil]
+            header_prov_bersih = [header_prov[i] for i in idx_diambil]
+            semua_prov_bersih = [
+                [row[i] if i < len(row) else "" for i in idx_diambil] for row in semua_prov
+            ]
 
             bp = xlwt.Workbook()
-            sp = bp.add_sheet("Gabungan_Provinsi")
-            for i, col in enumerate(header_prov):
+            sp = bp.add_sheet("Provinsi")
+            for i, col in enumerate(header_prov_bersih):
                 sp.write(0, i, col)
-            for i, row in enumerate(semua_prov, 1):
+            for i, row in enumerate(semua_prov_bersih, 1):
                 for j, val in enumerate(row):
                     sp.write(i, j, val)
             buf = io.BytesIO()
