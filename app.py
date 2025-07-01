@@ -149,7 +149,7 @@ if st.button("Proses & Unduh ZIP") and uploaded_files:
                 while len(row) < len(header_prov):
                     row.append("")
                 row[header_prov.index("Fluktuasi Harga Tertinggi Minggu Berjalan")] = komoditas
-                row[header_prov.index("Nilai CV (Nilai Fluktuasi)")] = nilai
+                row[header_prov.index("Nilai CV (Nilai fluktuasi)")] = nilai
 
             header_prov, semua_prov = bersihkan_header_dan_data(header_prov, semua_prov)
 
