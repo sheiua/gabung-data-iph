@@ -35,7 +35,6 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
     semua_data_kab = []
     semua_data_prov = []
 
-    # Sesuaikan index kolomnya
     indeks_kolom_kab = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     indeks_kolom_prov = [0, 1, 2, 3, 4, 5]
 
@@ -54,14 +53,9 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                 if sheet_kab:
                     wb.remove(sheet_kab)
                     wb._sheets.insert(0, sheet_kab)
-                else:
-                    st.warning(f"File {nama_file} tidak punya sheet 360 KabKota")
-
                 if sheet_prov:
                     wb.remove(sheet_prov)
                     wb._sheets.insert(1, sheet_prov)
-                else:
-                    st.warning(f"File {nama_file} tidak punya sheet Provinsi")
 
                 if sheet_kab:
                     for row in sheet_kab.iter_rows(min_row=2, values_only=True):
@@ -75,29 +69,33 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                             selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                             semua_data_prov.append(selected)
 
-                # Save cleaned original
-                wb_clean = Workbook()
-                ws_clean_kab = wb_clean.active
-                ws_clean_kab.title = "360 KabKota"
-                if sheet_kab:
-                    for row in sheet_kab.iter_rows(values_only=True):
-                        if any(row):
-                            ws_clean_kab.append(row)
-                if sheet_prov:
-                    ws_clean_prov = wb_clean.create_sheet("Provinsi")
-                    for row in sheet_prov.iter_rows(values_only=True):
-                        if any(row):
-                            ws_clean_prov.append(row)
-
-                clean_buffer = io.BytesIO()
-                wb_clean.save(clean_buffer)
-                clean_buffer.seek(0)
-                zip_file.writestr(f"original_cleaned_{bulan}_{tahun}.xlsx", clean_buffer.read())
+                # Only create cleaned workbook if there is data
+                if sheet_kab or sheet_prov:
+                    wb_clean = Workbook()
+                    made_clean = False
+                    if sheet_kab:
+                        ws_clean_kab = wb_clean.active
+                        ws_clean_kab.title = "360 KabKota"
+                        for row in sheet_kab.iter_rows(values_only=True):
+                            if any(row):
+                                ws_clean_kab.append(row)
+                                made_clean = True
+                    if sheet_prov:
+                        ws_clean_prov = wb_clean.create_sheet("Provinsi")
+                        for row in sheet_prov.iter_rows(values_only=True):
+                            if any(row):
+                                ws_clean_prov.append(row)
+                                made_clean = True
+                    if made_clean:
+                        clean_buffer = io.BytesIO()
+                        wb_clean.save(clean_buffer)
+                        clean_buffer.seek(0)
+                        zip_file.writestr(f"original_cleaned_{bulan}_{tahun}.xlsx", clean_buffer.read())
 
             except Exception as e:
                 st.error(f"❌ Gagal proses file {uploaded_file.name}: {e}")
 
-        # Gabung Kabupaten
+        # Kabupaten
         if semua_data_kab:
             book_kab = xlwt.Workbook()
             sheet_kab = book_kab.add_sheet("Gabungan_Kabupaten")
@@ -124,7 +122,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             output_kab.seek(0)
             zip_file.writestr(f"gabungan_{bulan}_{tahun}_kabupaten.xls", output_kab.read())
 
-        # Gabung Provinsi (urut sesuai permintaan)
+        # Provinsi
         if semua_data_prov:
             book_prov = xlwt.Workbook()
             sheet_prov = book_prov.add_sheet("Gabungan_Provinsi")
