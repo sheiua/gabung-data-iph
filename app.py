@@ -1,7 +1,6 @@
 import streamlit as st
 from openpyxl import load_workbook, Workbook
 import xlwt
-from datetime import datetime
 import io
 import zipfile
 
@@ -36,18 +35,9 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
     semua_data_kab = []
     semua_data_prov = []
 
-    if tahun == 2025:
-        indeks_kolom_kab = [0, 2, 3, 4, 5, 8, 9, 10]
-        indeks_kolom_prov = [0, 1, 2, 3, 4, 5]
-    else:
-        indeks_kolom_kab = [0, 1, 2, 3, 4, 7, 8, 9]
-        indeks_kolom_prov = [0, 1, 2, 3, 4, 5]
-
-    def extract_minggu(filename):
-        for i in range(1, 6):
-            if f"M{i}" in filename.upper():
-                return i
-        return None
+    # Sesuaikan index kolomnya
+    indeks_kolom_kab = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    indeks_kolom_prov = [0, 1, 2, 3, 4, 5]
 
     zip_buffer = io.BytesIO()
 
@@ -85,6 +75,7 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                             selected = [row[i] if i < len(row) else None for i in indeks_kolom_prov]
                             semua_data_prov.append(selected)
 
+                # Save cleaned original
                 wb_clean = Workbook()
                 ws_clean_kab = wb_clean.active
                 ws_clean_kab.title = "360 KabKota"
@@ -92,7 +83,6 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
                     for row in sheet_kab.iter_rows(values_only=True):
                         if any(row):
                             ws_clean_kab.append(row)
-
                 if sheet_prov:
                     ws_clean_prov = wb_clean.create_sheet("Provinsi")
                     for row in sheet_prov.iter_rows(values_only=True):
@@ -107,24 +97,24 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             except Exception as e:
                 st.error(f"❌ Gagal proses file {uploaded_file.name}: {e}")
 
-        today = datetime.today().strftime("%Y-%m-%d")
-
-        # Gabung Kab
+        # Gabung Kabupaten
         if semua_data_kab:
             book_kab = xlwt.Workbook()
             sheet_kab = book_kab.add_sheet("Gabungan_Kabupaten")
             headers_kab = [
-                "kode_kab", "prov", "kab", "nilai_iph", "komoditas",
-                "fluktuasi_harga_tertinggi", "nilai_fluktuasi_tertinggi",
-                "disparitas_harga_antar_wilayah"
+                "kode_kab", "pulau", "nama_prov", "nama_kab",
+                "NON HK", "Perubahan IPH", "Komoditas Andil Besar",
+                "Fluktuasi Harga Tertinggi Minggu Berjalan",
+                "Nilai CV (Nilai Fluktuasi)", "status"
             ]
             for col, val in enumerate(headers_kab):
                 sheet_kab.write(0, col, val)
             for idx, row in enumerate(semua_data_kab, start=1):
-                komoditas = str(row[4]).replace(",", ";")
+                komoditas = str(row[6]).replace(",", ";")
                 baris = [
                     row[0], row[1], row[2], row[3],
-                    komoditas, row[5], row[6], row[7], today
+                    row[4], row[5], komoditas,
+                    row[7], row[8], row[9]
                 ]
                 for col, val in enumerate(baris):
                     sheet_kab.write(idx, col, val)
@@ -134,21 +124,23 @@ if st.button("Proses & Unduh .zip") and uploaded_files:
             output_kab.seek(0)
             zip_file.writestr(f"gabungan_{bulan}_{tahun}_kabupaten.xls", output_kab.read())
 
-        # Gabung Prov - versi tanpa kolom kosong
+        # Gabung Provinsi (urut sesuai permintaan)
         if semua_data_prov:
             book_prov = xlwt.Workbook()
             sheet_prov = book_prov.add_sheet("Gabungan_Provinsi")
             headers_prov = [
-                "kode_prov", "nama_prov", "Perubahan IPH", "Komoditas Andil Terbesar",
-                "Fluktuasi Harga Tertinggi Minggu Berjalan", "Nilai CV (Nilai Fluktuasi)"
+                "kode_prov", "nama_prov", "Perubahan IPH",
+                "Komoditas Andil Terbesar",
+                "Fluktuasi Harga Tertinggi Minggu Berjalan",
+                "Nilai CV (Nilai Fluktuasi)"
             ]
             for col, val in enumerate(headers_prov):
                 sheet_prov.write(0, col, val)
             for idx, row in enumerate(semua_data_prov, start=1):
                 komoditas = str(row[3]).replace(",", ";")
                 baris = [
-                    row[0], row[1], row[2], komoditas,
-                    row[4], row[5], today
+                    row[0], row[1], row[2],
+                    komoditas, row[4], row[5]
                 ]
                 for col, val in enumerate(baris):
                     sheet_prov.write(idx, col, val)
