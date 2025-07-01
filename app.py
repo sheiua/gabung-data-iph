@@ -4,7 +4,7 @@ import xlwt
 import io
 import zipfile
 
-st.title("📊 Aplikasi Gabung Data IPH - Kabupaten & Provinsi")
+st.title("📊 Aplikasi Gabung Data Excel Harga IPH")
 
 # Pilih tahun & bulan
 tahun = st.selectbox("Pilih Tahun", [2023, 2024, 2025], index=2, key="tahun")
