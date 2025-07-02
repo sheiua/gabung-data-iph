@@ -24,10 +24,11 @@ bulan_num = map_bulan[bulan]
 
 uploaded_files = st.file_uploader("Upload file Excel (.xlsx)", type="xlsx", accept_multiple_files=True)
 
-if st.button("🔄 Proses & Unduh ZIP"):
+if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
     semua_kab, semua_prov = [], []
     header_kab, header_prov = [], []
 
+    # Kolom yang mau dihapus
     kolom_dihapus = [
         "Upaya Pemda (Monev)",
         "Saran Kepada Pemda",
@@ -40,29 +41,34 @@ if st.button("🔄 Proses & Unduh ZIP"):
             wb = load_workbook(f, data_only=True)
             sheetnames = wb.sheetnames
 
-            # Ambil sheet sesuai nama
             sheet_kab = wb["360 KabKota"] if "360 KabKota" in sheetnames else None
             sheet_prov = wb["Provinsi"] if "Provinsi" in sheetnames else None
 
-            # Kabupaten
+            # Proses Kabupaten
             if sheet_kab:
                 rows = list(sheet_kab.iter_rows(values_only=True))
                 if not header_kab:
                     header_kab = [cell for cell in rows[0]]
+
                 for row in rows[1:]:
+                    # Lewati baris Pivot / Ringkasan
                     if any("Row Label" in str(cell) or "Grand Total" in str(cell) for cell in row):
-                        continue  # lewati baris PivotTable
-                    if row[0] and str(row[0]).startswith("18"):
+                        continue
+
+                    # Filter: kolom A (kode_kab) harus digit panjang 4–6
+                    kode_kab = str(row[0]).strip() if row[0] is not None else ""
+                    if kode_kab.isdigit() and 4 <= len(kode_kab) <= 6:
                         semua_kab.append(list(row))
 
-            # Provinsi
+            # Proses Provinsi
             if sheet_prov:
                 rows = list(sheet_prov.iter_rows(values_only=True))
                 if not header_prov:
                     header_prov = [cell for cell in rows[0]]
+
                 for row in rows[1:]:
                     if any("Row Label" in str(cell) or "Grand Total" in str(cell) for cell in row):
-                        continue  # lewati baris PivotTable
+                        continue
                     if row[0]:
                         semua_prov.append(list(row))
 
