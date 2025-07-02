@@ -36,6 +36,7 @@ kolom_output = [
     "fluktuasi_harga_tertinggi", "disparitas_harga_antar_wilayah", "date_created"
 ]
 
+# Fungsi ambil minggu dari nama file
 def extract_minggu(filename):
     match = re.search(r'M(\d+)', filename)
     if match:
@@ -53,6 +54,35 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
 
             sheet_kab = wb["360 KabKota"] if "360 KabKota" in sheetnames else None
             sheet_prov = wb["Provinsi"] if "Provinsi" in sheetnames else None
+
+            # ====== STYLE TIAP KOLOM ======
+            header_styles = [
+                xlwt.easyxf('pattern: pattern solid, fore_colour ocean_blue; font: bold on, colour white;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour light_orange; font: bold on, colour white;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour gold; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour light_green; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour rose; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour turquoise; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour lime; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour gray25; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour tan; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour ice_blue; font: bold on, colour black;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour yellow; font: bold on, colour black;')
+            ]
+
+            body_styles = [
+                xlwt.easyxf('pattern: pattern solid, fore_colour pale_blue;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour coral;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour gray40;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour light_green;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour pink;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour light_turquoise;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour lime;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour gray25;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour tan;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour ice_blue;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour yellow;')
+            ]
 
             if sheet_kab:
                 rows = list(sheet_kab.iter_rows(values_only=True))
@@ -90,12 +120,12 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
                             max_lens[j] = panjang
 
                 for j, kol in enumerate(kolom_output):
-                    sk.write(0, j, kol)
-                    sk.col(j).width = (max_lens[j] + 2) * 256  # +2 padding
+                    sk.write(0, j, kol, header_styles[j % len(header_styles)])
+                    sk.col(j).width = (max_lens[j] + 2) * 256
 
                 for i, baris in enumerate(data_kab_final, 1):
                     for j, kol in enumerate(kolom_output):
-                        sk.write(i, j, baris.get(kol, ""))
+                        sk.write(i, j, baris.get(kol, ""), body_styles[j % len(body_styles)])
 
                 buf = io.BytesIO()
                 bk.save(buf)
@@ -129,7 +159,6 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
                 bp = xlwt.Workbook()
                 sp = bp.add_sheet("Gabungan_Provinsi")
 
-                # Hitung panjang max & set lebar kolom
                 max_lens = [len(kol) for kol in kolom_output]
                 for baris in data_prov_final:
                     for j, kol in enumerate(kolom_output):
@@ -138,12 +167,12 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
                             max_lens[j] = panjang
 
                 for j, kol in enumerate(kolom_output):
-                    sp.write(0, j, kol)
-                    sp.col(j).width = (max_lens[j] + 2) * 256  # +2 padding
+                    sp.write(0, j, kol, header_styles[j % len(header_styles)])
+                    sp.col(j).width = (max_lens[j] + 2) * 256
 
                 for i, baris in enumerate(data_prov_final, 1):
                     for j, kol in enumerate(kolom_output):
-                        sp.write(i, j, baris.get(kol, ""))
+                        sp.write(i, j, baris.get(kol, ""), body_styles[j % len(body_styles)])
 
                 buf = io.BytesIO()
                 bp.save(buf)
