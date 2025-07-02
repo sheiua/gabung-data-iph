@@ -3,6 +3,9 @@ from openpyxl import load_workbook
 import xlwt
 import io
 import zipfile
+import tempfile
+import xlwings as xw
+import os
 
 st.title("📊 Aplikasi Gabung Data Excel Harga IPH")
 
@@ -37,7 +40,25 @@ if st.button("🔄 Proses & Unduh ZIP"):
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zf:
         for f in uploaded_files:
-            wb = load_workbook(f, data_only=True)
+            # Simpan file sementara
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                tmp.write(f.read())
+                tmp_path = tmp.name
+
+            # Hapus PivotTable menggunakan xlwings
+            app = xw.App(visible=False)
+            try:
+                wb_xlw = app.books.open(tmp_path)
+                for sheet in wb_xlw.sheets:
+                    for pt in sheet.api.PivotTables():
+                        pt.TableRange2.Clear()  # Hapus seluruh area pivot
+                wb_xlw.save()
+                wb_xlw.close()
+            finally:
+                app.quit()
+
+            # Load ulang dengan openpyxl
+            wb = load_workbook(tmp_path, data_only=True)
             sheetnames = wb.sheetnames
 
             # Ambil sheet sesuai nama
@@ -61,6 +82,9 @@ if st.button("🔄 Proses & Unduh ZIP"):
                 for row in rows[1:]:
                     if row[0]:
                         semua_prov.append(list(row))
+
+            # Hapus file sementara
+            os.remove(tmp_path)
 
         # Buat XLS Gabungan Kabupaten
         if semua_kab:
