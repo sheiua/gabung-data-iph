@@ -30,31 +30,12 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True
 )
 
-# Mapping header input -> output
-map_header_kab = {
-    "kode_kab": "kode_prov",
-    "nama_prov": "prov",
-    "Perubahan IPH": "nilai_iph",
-    "Komoditas Andil Besar": "komoditas",
-    "Fluktuasi Harga Tertinggi Minggu Berjalan": "fluktuasi_harga_tertinggi",
-    "Disparitas Harga antar Daerah": "disparitas_harga_antar_wilayah"
-}
-
-map_header_prov = {
-    "kode_prov": "kode_prov",
-    "nama_prov": "prov",
-    "Perubahan IPH": "nilai_iph",
-    "Komoditas Andil Terbesar": "komoditas",
-    "Fluktuasi Harga Tertinggi Minggu Berjalan": "fluktuasi_harga_tertinggi"
-}
-
 kolom_output = [
     "id", "tahun", "bulan", "minggu",
     "kode_prov", "prov", "nilai_iph", "komoditas",
     "fluktuasi_harga_tertinggi", "disparitas_harga_antar_wilayah", "date_created"
 ]
 
-# Fungsi ambil minggu dari nama file
 def extract_minggu(filename):
     match = re.search(r'M(\d+)', filename)
     if match:
@@ -62,14 +43,6 @@ def extract_minggu(filename):
     return 1
 
 if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
-    semua_kab, semua_prov = [], []
-    header_kab, header_prov = [], []
-
-    kolom_dihapus = [
-        "Upaya Pemda (Monev)",
-        "Saran Kepada Pemda"
-    ]
-
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zf:
         for f in uploaded_files:
@@ -107,8 +80,19 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
 
                 bk = xlwt.Workbook()
                 sk = bk.add_sheet("Gabungan_Kabupaten")
+
+                # Hitung panjang max & set lebar kolom
+                max_lens = [len(kol) for kol in kolom_output]
+                for baris in data_kab_final:
+                    for j, kol in enumerate(kolom_output):
+                        panjang = len(str(baris.get(kol, "")))
+                        if panjang > max_lens[j]:
+                            max_lens[j] = panjang
+
                 for j, kol in enumerate(kolom_output):
                     sk.write(0, j, kol)
+                    sk.col(j).width = (max_lens[j] + 2) * 256  # +2 padding
+
                 for i, baris in enumerate(data_kab_final, 1):
                     for j, kol in enumerate(kolom_output):
                         sk.write(i, j, baris.get(kol, ""))
@@ -144,8 +128,19 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
 
                 bp = xlwt.Workbook()
                 sp = bp.add_sheet("Gabungan_Provinsi")
+
+                # Hitung panjang max & set lebar kolom
+                max_lens = [len(kol) for kol in kolom_output]
+                for baris in data_prov_final:
+                    for j, kol in enumerate(kolom_output):
+                        panjang = len(str(baris.get(kol, "")))
+                        if panjang > max_lens[j]:
+                            max_lens[j] = panjang
+
                 for j, kol in enumerate(kolom_output):
                     sp.write(0, j, kol)
+                    sp.col(j).width = (max_lens[j] + 2) * 256  # +2 padding
+
                 for i, baris in enumerate(data_prov_final, 1):
                     for j, kol in enumerate(kolom_output):
                         sp.write(i, j, baris.get(kol, ""))
