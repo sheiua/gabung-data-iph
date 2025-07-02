@@ -68,8 +68,8 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
                 xlwt.easyxf('pattern: pattern solid, fore_colour light_green;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour pink;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour light_turquoise;'),
-                xlwt.easyxf('pattern: pattern solid, fore_colour lime;'),
-                xlwt.easyxf('pattern: pattern solid, fore_colour gray25;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour aqua;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour rose;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour tan;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour ice_blue;')
             ]
