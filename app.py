@@ -57,18 +57,18 @@ if st.button("🔄 Proses & Unduh ZIP") and uploaded_files:
 
             # ====== STYLE ======
             header_style = xlwt.easyxf(
-                'pattern: pattern solid, fore_colour light_orange; font: bold on, colour black;'
+                'pattern: pattern solid, fore_colour yellow; font: bold on, colour black;'
             )
 
             body_styles = [
-                xlwt.easyxf('pattern: pattern solid, fore_colour light_orange;'),  # kolom pertama sama kuning
+                xlwt.easyxf('pattern: pattern solid, fore_colour yellow;'),  # kolom pertama sama kuning
                 xlwt.easyxf('pattern: pattern solid, fore_colour pale_blue;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour coral;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour gray40;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour light_green;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour pink;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour light_turquoise;'),
-                xlwt.easyxf('pattern: pattern solid, fore_colour aqua;'),
+                xlwt.easyxf('pattern: pattern solid, fore_colour lime;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour gray25;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour tan;'),
                 xlwt.easyxf('pattern: pattern solid, fore_colour ice_blue;')
