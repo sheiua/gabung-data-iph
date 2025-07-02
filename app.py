@@ -71,6 +71,8 @@ if st.button("🔄 Proses & Unduh ZIP"):
                 if not header_kab:
                     header_kab = [cell for cell in rows[0]]
                 for row in rows[1:]:
+                    if any("Row Label" in str(cell) or "Grand Total" in str(cell) for cell in row):
+                        continue  # skip baris pivot
                     if row[0] and str(row[0]).startswith("18"):  # kode_kab
                         semua_kab.append(list(row))
 
@@ -80,6 +82,8 @@ if st.button("🔄 Proses & Unduh ZIP"):
                 if not header_prov:
                     header_prov = [cell for cell in rows[0]]
                 for row in rows[1:]:
+                    if any("Row Label" in str(cell) or "Grand Total" in str(cell) for cell in row):
+                        continue  # skip baris pivot
                     if row[0]:
                         semua_prov.append(list(row))
 
